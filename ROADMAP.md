@@ -12,12 +12,9 @@ Language lives in `CONTEXT.md`. Terms below that are not in the glossary yet are
 - **Job** — The work site. Not a Warehouse. No quantity on the Job.
 - **Inventory** — Movements that change Stock: Receipt, Transfer between Warehouses, Issue to a Job.
 - **Procurement** — Supplier and Purchase. A Receipt from a Purchase raises Stock.
+- **Staff and Assignment** — Staff as people who can be allocated. Assignment ties Staff to a Job for a period.
 
 ## Phases
-
-### 6. Staff and Assignment
-
-Staff as people who can be allocated. Assignment ties Staff to a Job for a period.
 
 ### 7. Requisition
 

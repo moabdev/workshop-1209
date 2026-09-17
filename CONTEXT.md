@@ -40,6 +40,14 @@ _Avoid_: permission, perfil, group
 The work site. Not a Warehouse. Quantity does not belong here.
 _Avoid_: obra, canteiro, project, site, Warehouse (as this place)
 
+**Staff**:
+A person who can be allocated to a Job. Not a User. Exists with no Assignment.
+_Avoid_: employee, usuário, User (as this person)
+
+**Assignment**:
+Staff tied to one Job for a period. It does not write Stock. The Job does not hold Staff.
+_Avoid_: alocação, roster, hours
+
 **Movement**:
 A Receipt, Transfer, or Issue that writes Stock quantity. Nothing else writes Stock.
 _Avoid_: movimento, stock write by hand
