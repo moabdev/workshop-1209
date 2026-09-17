@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import './App.css'
 
-type Screen = 'catalog' | 'warehouse' | 'job' | 'stock' | 'inventory' | 'procurement' | 'users'
+type Screen = 'catalog' | 'warehouse' | 'job' | 'staff' | 'stock' | 'inventory' | 'procurement' | 'users'
 type Role = 'Administrator' | 'Operator'
 
 type User = {
@@ -28,6 +28,21 @@ type Warehouse = {
 type Job = {
   id: string
   name: string
+  createdAt: string
+}
+
+type Staff = {
+  id: string
+  name: string
+  createdAt: string
+}
+
+type Assignment = {
+  id: string
+  staffId: string
+  jobId: string
+  startDate: string
+  endDate: string
   createdAt: string
 }
 
@@ -73,6 +88,8 @@ function App() {
   const [items, setItems] = useState<Item[]>([])
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
+  const [staff, setStaff] = useState<Staff[]>([])
+  const [assignments, setAssignments] = useState<Assignment[]>([])
   const [stock, setStock] = useState<Stock[]>([])
   const [movements, setMovements] = useState<Movement[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -83,6 +100,11 @@ function App() {
   const [unit, setUnit] = useState('')
   const [warehouseName, setWarehouseName] = useState('')
   const [jobName, setJobName] = useState('')
+  const [staffName, setStaffName] = useState('')
+  const [assignmentStaffId, setAssignmentStaffId] = useState('')
+  const [assignmentJobId, setAssignmentJobId] = useState('')
+  const [assignmentStartDate, setAssignmentStartDate] = useState('')
+  const [assignmentEndDate, setAssignmentEndDate] = useState('')
   const [supplierName, setSupplierName] = useState('')
   const [purchaseSupplierId, setPurchaseSupplierId] = useState('')
   const [purchaseItemId, setPurchaseItemId] = useState('')
@@ -132,6 +154,18 @@ function App() {
     setJobs((await response.json()) as Job[])
   }
 
+  async function refreshStaff() {
+    const response = await request('/api/staff')
+    if (!response.ok) return
+    setStaff((await response.json()) as Staff[])
+  }
+
+  async function refreshAssignments() {
+    const response = await request('/api/assignments')
+    if (!response.ok) return
+    setAssignments((await response.json()) as Assignment[])
+  }
+
   async function refreshStock() {
     const response = await request('/api/stock')
     if (!response.ok) return
@@ -167,6 +201,8 @@ function App() {
       refreshItems(),
       refreshWarehouses(),
       refreshJobs(),
+      refreshStaff(),
+      refreshAssignments(),
       refreshStock(),
       refreshMovements(),
       refreshSuppliers(),
@@ -340,6 +376,68 @@ function App() {
     setError(body.error ?? 'Could not delete Job')
   }
 
+  async function onCreateStaff(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError('')
+    const response = await request('/api/staff', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: staffName }),
+    })
+    if (response.status === 201) {
+      setStaffName('')
+      await refreshStaff()
+      return
+    }
+    const body = (await response.json()) as { error?: string }
+    setError(body.error ?? 'Could not create Staff')
+  }
+
+  async function onDeleteStaff(id: string) {
+    setError('')
+    const response = await request(`/api/staff/${id}`, { method: 'DELETE' })
+    if (response.status === 204) {
+      await refreshStaff()
+      return
+    }
+    const body = (await response.json()) as { error?: string }
+    setError(body.error ?? 'Could not delete Staff')
+  }
+
+  async function onCreateAssignment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError('')
+    const response = await request('/api/assignments', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        staffId: assignmentStaffId,
+        jobId: assignmentJobId,
+        startDate: assignmentStartDate,
+        endDate: assignmentEndDate,
+      }),
+    })
+    if (response.status === 201) {
+      setAssignmentStartDate('')
+      setAssignmentEndDate('')
+      await refreshAssignments()
+      return
+    }
+    const body = (await response.json()) as { error?: string }
+    setError(body.error ?? 'Could not create Assignment')
+  }
+
+  async function onDeleteAssignment(id: string) {
+    setError('')
+    const response = await request(`/api/assignments/${id}`, { method: 'DELETE' })
+    if (response.status === 204) {
+      await refreshAssignments()
+      return
+    }
+    const body = (await response.json()) as { error?: string }
+    setError(body.error ?? 'Could not delete Assignment')
+  }
+
   async function onCreateSupplier(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
@@ -494,6 +592,10 @@ function App() {
     return jobs.find((job) => job.id === id)?.name ?? id
   }
 
+  function staffNameOf(id: string) {
+    return staff.find((row) => row.id === id)?.name ?? id
+  }
+
   function supplierNameOf(id: string) {
     return suppliers.find((supplier) => supplier.id === id)?.name ?? id
   }
@@ -585,6 +687,17 @@ function App() {
             }}
           >
             Job
+          </button>
+          <button
+            className="nav-link"
+            type="button"
+            aria-current={screen === 'staff' ? 'page' : undefined}
+            onClick={() => {
+              setError('')
+              setScreen('staff')
+            }}
+          >
+            Staff
           </button>
           <button
             className="nav-link"
@@ -776,6 +889,126 @@ function App() {
                     className="btn-secondary btn-compact"
                     type="button"
                     onClick={() => void onDeleteJob(job.id)}
+                  >
+                    Delete
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : null}
+
+      {screen === 'staff' ? (
+        <section className="page">
+          <header className="page-banner page-banner-forest">
+            <h1>Staff</h1>
+            <p className="lede">People allocated to a Job for a period. Not a User.</p>
+          </header>
+          <form className="panel panel-soft" onSubmit={(event) => void onCreateStaff(event)}>
+            <label>
+              Name
+              <input
+                name="staffName"
+                value={staffName}
+                onChange={(event) => setStaffName(event.target.value)}
+                required
+              />
+            </label>
+            <button className="btn-primary" type="submit">
+              Create Staff
+            </button>
+          </form>
+          {error ? <p role="alert">{error}</p> : null}
+          {staff.length === 0 ? (
+            <p className="empty">No Staff yet.</p>
+          ) : (
+            <ul className="record-list">
+              {staff.map((row) => (
+                <li className="staff" key={row.id}>
+                  <span>{row.name}</span>
+                  <button
+                    className="btn-secondary btn-compact"
+                    type="button"
+                    onClick={() => void onDeleteStaff(row.id)}
+                  >
+                    Delete
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <form className="panel panel-soft" onSubmit={(event) => void onCreateAssignment(event)}>
+            <label>
+              Staff
+              <select
+                name="assignmentStaffId"
+                value={assignmentStaffId}
+                onChange={(event) => setAssignmentStaffId(event.target.value)}
+                required
+              >
+                <option value="">Select Staff</option>
+                {staff.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Job
+              <select
+                name="assignmentJobId"
+                value={assignmentJobId}
+                onChange={(event) => setAssignmentJobId(event.target.value)}
+                required
+              >
+                <option value="">Select Job</option>
+                {jobs.map((job) => (
+                  <option key={job.id} value={job.id}>
+                    {job.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              startDate
+              <input
+                name="startDate"
+                type="date"
+                value={assignmentStartDate}
+                onChange={(event) => setAssignmentStartDate(event.target.value)}
+                required
+              />
+            </label>
+            <label>
+              endDate
+              <input
+                name="endDate"
+                type="date"
+                value={assignmentEndDate}
+                onChange={(event) => setAssignmentEndDate(event.target.value)}
+                required
+              />
+            </label>
+            <button className="btn-primary" type="submit">
+              Create Assignment
+            </button>
+          </form>
+          {assignments.length === 0 ? (
+            <p className="empty">No Assignment yet.</p>
+          ) : (
+            <ul className="record-list">
+              {assignments.map((assignment) => (
+                <li className="assignment" key={assignment.id}>
+                  <span>{staffNameOf(assignment.staffId)}</span>
+                  <span>{jobNameOf(assignment.jobId)}</span>
+                  <span>{assignment.startDate}</span>
+                  <span>{assignment.endDate}</span>
+                  <button
+                    className="btn-secondary btn-compact"
+                    type="button"
+                    onClick={() => void onDeleteAssignment(assignment.id)}
                   >
                     Delete
                   </button>

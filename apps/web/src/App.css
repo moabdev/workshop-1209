@@ -279,8 +279,13 @@ select:focus {
 }
 
 .record-list li.warehouse,
-.record-list li.job {
+.record-list li.job,
+.record-list li.staff {
   grid-template-columns: 1fr auto;
+}
+
+.record-list li.assignment {
+  grid-template-columns: 1fr 1fr 1fr 1fr auto;
 }
 
 .record-list li.user {
