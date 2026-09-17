@@ -115,6 +115,7 @@ describe('JobService', () => {
   test('deleteById maps a foreign-key error to 409 Job has Movement', async () => {
     const jobs = sinon.createStubInstance(JobRepository)
     jobs.deleteById.rejects(foreignKeyByCode())
+    jobs.hasAssignment.resolves(false)
     const service = new JobService(jobs)
 
     try {
@@ -123,6 +124,21 @@ describe('JobService', () => {
     } catch (error) {
       expect((error as Error & { statusCode: number }).statusCode).toBe(409)
       expect((error as Error).message).toBe('Job has Movement')
+    }
+  })
+
+  test('deleteById maps a foreign-key error to 409 Job has Assignment', async () => {
+    const jobs = sinon.createStubInstance(JobRepository)
+    jobs.deleteById.rejects(foreignKeyByCode())
+    jobs.hasAssignment.resolves(true)
+    const service = new JobService(jobs)
+
+    try {
+      await service.deleteById('job-1')
+      throw new Error('expected deleteById to throw')
+    } catch (error) {
+      expect((error as Error & { statusCode: number }).statusCode).toBe(409)
+      expect((error as Error).message).toBe('Job has Assignment')
     }
   })
 

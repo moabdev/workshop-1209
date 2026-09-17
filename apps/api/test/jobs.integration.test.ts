@@ -23,7 +23,13 @@ const operator = { email: 'op@local', password: 'secret', role: 'Operator' }
 
 function clearJobs() {
   const sqlite = new Database(dbFile)
+  sqlite.exec('DELETE FROM assignments')
+  sqlite.exec('DELETE FROM movements')
+  sqlite.exec('DELETE FROM stock')
+  sqlite.exec('DELETE FROM staff')
   sqlite.exec('DELETE FROM jobs')
+  sqlite.exec('DELETE FROM warehouses')
+  sqlite.exec('DELETE FROM items')
   sqlite.close()
 }
 
@@ -199,6 +205,93 @@ describe('jobs HTTP', () => {
 
   test('S10 GET /api/jobs without a session returns 401', async () => {
     const response = await app.inject({ method: 'GET', url: '/api/jobs' })
+    expect(response.statusCode).toBe(401)
+    expect(response.json()).toEqual({
+      error: 'Unauthorized',
+      statusCode: 401,
+    })
+  })
+
+  test('DELETE /api/jobs/:id with Assignment returns 409', async () => {
+    const staff = (
+      await request({ method: 'POST', url: '/api/staff', payload: { name: 'Ana' } })
+    ).json() as { id: string }
+    const job = (
+      await request({ method: 'POST', url: '/api/jobs', payload: jobPayload })
+    ).json() as { id: string }
+    const assignment = await request({
+      method: 'POST',
+      url: '/api/assignments',
+      payload: {
+        staffId: staff.id,
+        jobId: job.id,
+        startDate: '2026-03-01',
+        endDate: '2026-03-10',
+      },
+    })
+    expect(assignment.statusCode).toBe(201)
+    const assignmentId = (assignment.json() as { id: string }).id
+
+    const response = await request({ method: 'DELETE', url: `/api/jobs/${job.id}` })
+    expect(response.statusCode).toBe(409)
+    expect(response.json()).toEqual({
+      error: 'Job has Assignment',
+      statusCode: 409,
+    })
+
+    const jobsList = (await request({ method: 'GET', url: '/api/jobs' })).json() as { id: string }[]
+    expect(jobsList.some((row) => row.id === job.id)).toBe(true)
+    const assignments = (await request({ method: 'GET', url: '/api/assignments' })).json() as {
+      id: string
+    }[]
+    expect(assignments.some((row) => row.id === assignmentId)).toBe(true)
+  })
+
+  test('DELETE /api/jobs/:id with Movement and no Assignment returns 409', async () => {
+    const item = (
+      await request({
+        method: 'POST',
+        url: '/api/items',
+        payload: { sku: 'CEM-50', name: 'Cimento CP-II', unit: 'saco' },
+      })
+    ).json() as { id: string }
+    const warehouse = (
+      await request({ method: 'POST', url: '/api/warehouses', payload: { name: 'Depot A' } })
+    ).json() as { id: string }
+    const job = (
+      await request({ method: 'POST', url: '/api/jobs', payload: jobPayload })
+    ).json() as { id: string }
+    const receipt = await request({
+      method: 'POST',
+      url: '/api/receipts',
+      payload: { warehouseId: warehouse.id, itemId: item.id, quantity: 12.5 },
+    })
+    expect(receipt.statusCode).toBe(201)
+    const issue = await request({
+      method: 'POST',
+      url: '/api/issues',
+      payload: {
+        warehouseId: warehouse.id,
+        itemId: item.id,
+        jobId: job.id,
+        quantity: 2,
+      },
+    })
+    expect(issue.statusCode).toBe(201)
+
+    const response = await request({ method: 'DELETE', url: `/api/jobs/${job.id}` })
+    expect(response.statusCode).toBe(409)
+    expect(response.json()).toEqual({
+      error: 'Job has Movement',
+      statusCode: 409,
+    })
+  })
+
+  test('DELETE /api/jobs/:id without a session returns 401', async () => {
+    const response = await app.inject({
+      method: 'DELETE',
+      url: '/api/jobs/00000000-0000-4000-8000-000000000000',
+    })
     expect(response.statusCode).toBe(401)
     expect(response.json()).toEqual({
       error: 'Unauthorized',

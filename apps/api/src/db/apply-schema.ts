@@ -25,6 +25,24 @@ export function applySchema(sqlite: Database): void {
     );
     CREATE UNIQUE INDEX IF NOT EXISTS jobs_name_unique ON jobs (name);
 
+    CREATE TABLE IF NOT EXISTS staff (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS staff_name_unique ON staff (name);
+
+    CREATE TABLE IF NOT EXISTS assignments (
+      id TEXT PRIMARY KEY NOT NULL,
+      staff_id TEXT NOT NULL,
+      job_id TEXT NOT NULL,
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (staff_id) REFERENCES staff(id),
+      FOREIGN KEY (job_id) REFERENCES jobs(id)
+    );
+
     CREATE TABLE IF NOT EXISTS stock (
       id TEXT PRIMARY KEY NOT NULL,
       warehouse_id TEXT NOT NULL,

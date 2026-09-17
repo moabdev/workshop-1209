@@ -41,6 +41,9 @@ export class JobService {
       deleted = await this.jobs.deleteById(id)
     } catch (error) {
       if (isForeignKeyViolation(error)) {
+        if (await this.jobs.hasAssignment(id)) {
+          throw httpError('Job has Assignment', 409)
+        }
         throw httpError('Job has Movement', 409)
       }
       throw error

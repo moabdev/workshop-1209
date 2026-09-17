@@ -20,6 +20,25 @@ export const jobs = sqliteTable('jobs', {
   createdAt: text('created_at').notNull(),
 })
 
+export const staff = sqliteTable('staff', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  createdAt: text('created_at').notNull(),
+})
+
+export const assignments = sqliteTable('assignments', {
+  id: text('id').primaryKey(),
+  staffId: text('staff_id')
+    .notNull()
+    .references(() => staff.id),
+  jobId: text('job_id')
+    .notNull()
+    .references(() => jobs.id),
+  startDate: text('start_date').notNull(),
+  endDate: text('end_date').notNull(),
+  createdAt: text('created_at').notNull(),
+})
+
 export const suppliers = sqliteTable('suppliers', {
   id: text('id').primaryKey(),
   name: text('name').notNull().unique(),

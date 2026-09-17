@@ -2,7 +2,9 @@ import { createDb } from '../db/client'
 import { ItemRepository } from '../repositories/item.repository'
 import { JobRepository } from '../repositories/job.repository'
 import { MovementRepository } from '../repositories/movement.repository'
+import { AssignmentRepository } from '../repositories/assignment.repository'
 import { PurchaseRepository } from '../repositories/purchase.repository'
+import { StaffRepository } from '../repositories/staff.repository'
 import { StockRepository } from '../repositories/stock.repository'
 import { SupplierRepository } from '../repositories/supplier.repository'
 import { UserRepository } from '../repositories/user.repository'
@@ -10,7 +12,9 @@ import { WarehouseRepository } from '../repositories/warehouse.repository'
 import { ItemService } from '../services/item.service'
 import { MovementService } from '../services/movement.service'
 import { JobService } from '../services/job.service'
+import { AssignmentService } from '../services/assignment.service'
 import { PurchaseService } from '../services/purchase.service'
+import { StaffService } from '../services/staff.service'
 import { StockService } from '../services/stock.service'
 import { SupplierService } from '../services/supplier.service'
 import { UserService } from '../services/user.service'
@@ -82,5 +86,21 @@ export function registerServices(): void {
   container.register(
     tokens.purchaseService,
     (c) => new PurchaseService(c.get(tokens.purchaseRepository)),
+  )
+  container.register(
+    tokens.staffRepository,
+    (c) => new StaffRepository(c.get(tokens.db)),
+  )
+  container.register(
+    tokens.staffService,
+    (c) => new StaffService(c.get(tokens.staffRepository)),
+  )
+  container.register(
+    tokens.assignmentRepository,
+    (c) => new AssignmentRepository(c.get(tokens.db)),
+  )
+  container.register(
+    tokens.assignmentService,
+    (c) => new AssignmentService(c.get(tokens.assignmentRepository)),
   )
 }
